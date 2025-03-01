@@ -1,10 +1,14 @@
 package one.voidstar.kdie
 
-class DiceRollInstruction constructor() {
-    var value: Any? = null
-    var expectedResultType: ResultType = ResultType.DOUBLE
-    var numArgs: Int = 0
-    var operationType: OperationType = OperationType.UNKNOWN
+class DiceRollInstruction(
+    var value: Any? = null,
+    var expectedResultType: ResultType = ResultType.DOUBLE,
+    var numArgs: Int = 0,
+    var opType: OperationType = OperationType.UNKNOWN
+) {
+    init {
+        setOperationType(opType)
+    }
 
     companion object {
         private val operations = mutableMapOf<OperationType, (List<DiceRollInstruction>) -> DiceRollInstruction>()
@@ -47,7 +51,7 @@ class DiceRollInstruction constructor() {
 
             operations[OperationType.MAX] = { args ->
                 val arg1 = args[0]
-                if (arg1.operationType != OperationType.DICE_COLLECTION) {
+                if (arg1.opType != OperationType.DICE_COLLECTION) {
                     throw IllegalArgumentException("Max operation requires a dice collection")
                 }
 
@@ -59,7 +63,7 @@ class DiceRollInstruction constructor() {
 
             operations[OperationType.SUM] = { args ->
                 val arg1 = args[0]
-                if (arg1.operationType != OperationType.DICE_COLLECTION) {
+                if (arg1.opType != OperationType.DICE_COLLECTION) {
                     throw IllegalArgumentException("Sum operation requires a dice collection")
                 }
 
@@ -69,7 +73,7 @@ class DiceRollInstruction constructor() {
 
             operations[OperationType.MEAN] = { args ->
                 val arg1 = args[0]
-                if (arg1.operationType != OperationType.DICE_COLLECTION) {
+                if (arg1.opType != OperationType.DICE_COLLECTION) {
                     throw IllegalArgumentException("Mean operation requires a dice collection")
                 }
 
@@ -88,7 +92,7 @@ class DiceRollInstruction constructor() {
 
         fun createNumber(num: Double): DiceRollInstruction {
             val dri = create()
-            dri.operationType = OperationType.NUMBER
+            dri.opType = OperationType.NUMBER
             dri.value = num
             dri.expectedResultType = ResultType.DOUBLE
             return dri
@@ -99,7 +103,7 @@ class DiceRollInstruction constructor() {
             clone.value = original.value
             clone.expectedResultType = original.expectedResultType
             clone.numArgs = original.numArgs
-            clone.operationType = original.operationType
+            clone.opType = original.opType
             return clone
         }
 
@@ -165,11 +169,11 @@ class DiceRollInstruction constructor() {
             else -> -1
         }
 
-        operationType = opType
+        this.opType = opType
     }
 
     fun getNumber(): Double {
-        return when (operationType) {
+        return when (opType) {
             OperationType.NUMBER -> value as Double
             OperationType.DICE_COLLECTION -> (value as DiceCollection).total().toDouble()
             else -> 0.0
@@ -177,7 +181,7 @@ class DiceRollInstruction constructor() {
     }
 
     fun getDiceCollection(): DiceCollection {
-        return if (operationType == OperationType.DICE_COLLECTION) {
+        return if (opType == OperationType.DICE_COLLECTION) {
             value as DiceCollection
         } else {
             throw IllegalStateException("Not a dice collection")
@@ -186,7 +190,7 @@ class DiceRollInstruction constructor() {
 
     fun doOperation(args: List<DiceRollInstruction>): DiceRollInstruction {
         setupOperations()
-        val operation = operations[operationType] ?: throw IllegalStateException("Operation not supported")
+        val operation = operations[opType] ?: throw IllegalStateException("Operation not supported")
         return operation(args)
     }
 
@@ -196,19 +200,19 @@ class DiceRollInstruction constructor() {
         return value == other.value &&
                 expectedResultType == other.expectedResultType &&
                 numArgs == other.numArgs &&
-                operationType == other.operationType
+                opType == other.opType
     }
 
     override fun hashCode(): Int {
         var result = value?.hashCode() ?: 0
         result = 31 * result + expectedResultType.hashCode()
         result = 31 * result + numArgs
-        result = 31 * result + operationType.hashCode()
+        result = 31 * result + opType.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return when (operationType) {
+        return when (opType) {
             OperationType.ADD -> "+"
             OperationType.SUBTRACT -> "-"
             OperationType.MULTIPLY -> "*"

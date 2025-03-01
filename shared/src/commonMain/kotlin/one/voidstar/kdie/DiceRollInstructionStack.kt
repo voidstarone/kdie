@@ -1,6 +1,6 @@
 package one.voidstar.kdie
 
-class DiceRollInstructionStack private constructor(initialSize: Int) {
+class DiceRollInstructionStack constructor(initialSize: Int) {
     val instructions: MutableList<DiceRollInstruction> = ArrayList(if (initialSize == 0) 1 else initialSize)
 
     companion object {
@@ -51,7 +51,7 @@ class DiceRollInstructionStack private constructor(initialSize: Int) {
 
         while (peek() != null) {
             dri = pop() ?: break
-            val opType = dri.operationType
+            val opType = dri.opType
 
             // Bad value
             if (opType == OperationType.UNKNOWN) {
@@ -75,14 +75,14 @@ class DiceRollInstructionStack private constructor(initialSize: Int) {
 
 // Helper function to convert from instruction to result
 fun resultFromInstruction(dri: DiceRollInstruction): DiceRollInstructionResult? {
-    return when (dri.operationType) {
+    return when (dri.opType) {
         OperationType.NUMBER -> {
             val d = dri.getNumber()
             DiceRollInstructionResult.withDouble(d)
         }
         OperationType.DICE_COLLECTION -> {
             val dc = dri.getDiceCollection()
-            if (dc != null) DiceRollInstructionResult.withDiceCollection(dc) else null
+            DiceRollInstructionResult.withDiceCollection(dc)
         }
         else -> null
     }

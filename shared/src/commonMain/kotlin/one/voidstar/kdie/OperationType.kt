@@ -10,5 +10,5 @@ enum class OperationType {
     DIVIDE,
     SUM,
     MEAN,
-    MAX
+    MAX 
 }

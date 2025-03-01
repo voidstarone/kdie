@@ -1,6 +1,25 @@
 package one.voidstar.kdie
 
-import DiceCollection
+// Data classes instead of C structs
+data class Range(
+    var index: Int,
+    var length: Int
+) {
+    fun isInRange(i: Int): Boolean {
+        return i >= index && i <= (index + length)
+    }
+}
+
+data class OperatorWithLocation(
+    val operation: OperationType,
+    val index: Int
+)
+
+data class RangeWithPriority(
+    val range: Range,
+    var priority: Int
+)
+
 
 class DiceNotationInterpreter {
     companion object {
@@ -11,25 +30,25 @@ class DiceNotationInterpreter {
             return c in '0'..'9'
         }
 
-        private fun extractNumDice(notation: String): Pair<Long, Long> {
+        private fun extractNumDice(notation: String): Pair<Int, Int> {
             if (notation.startsWith("d")) {
-                return Pair(1, 0)
+                return Pair(1.toInt(), 0.toInt())
             }
             if (notation.startsWith("%")) {
-                return Pair(100, 0)
+                return Pair(100.toInt(), 0.toInt())
             }
 
-            var numDigits = 0
+            var numDigits: Int = 0
             while (numDigits < notation.length && isDigit(notation[numDigits])) {
                 numDigits++
             }
 
             val numDice = notation.substring(0, numDigits).toIntOrNull() ?: 0
-            return Pair(numDice, numDigits)
+            return Pair(numDice, numDigits.toInt())
         }
 
         private fun isPercentile(notation: String, startIndex: Int): Pair<Boolean, Int> {
-            val isPercentile = notation.getOrNull(startIndex) == '%'
+            val isPercentile = notation.getOrNull(startIndex.toInt()) == '%'
             return Pair(isPercentile, startIndex + (if (isPercentile) 1 else 0))
         }
 
@@ -75,10 +94,10 @@ class DiceNotationInterpreter {
             val parts = notation.split(DICE_NOTATION_SEPARATOR)
             if (parts.size != 2) return null
 
-            val count: Long = parts[0].toLongOrNull() ?: 1
-            val sides: Long = parts[1].toLongOrNull() ?: 1
+            val count: Int = parts[0].toIntOrNull() ?: 1
+            val sides: Int = parts[1].toIntOrNull() ?: 1
 
-            return DiceCollection(count.toLong(), sides)
+            return DiceCollection(count, sides)
         }
 
         fun diceCollectionFromPercentileNotation(notation: String): DiceCollection? {
@@ -90,36 +109,36 @@ class DiceNotationInterpreter {
             val parts = notation.split(DICE_NOTATION_PERCENTILE_INDICATOR)
             val count = if (parts[0].isEmpty()) 1 else parts[0].toIntOrNull() ?: 1
 
-            return DiceCollection(count.toLong(), 100)
+            return DiceCollection(count.toInt(), 100)
         }
 
         fun createFromNotation(notation: String): DiceCollection? {
-            var numDice: Long
-            var numSides: Long
-            var explodesAt = 0
+            var numDice: Int
+            var numSides: Int
+            var explodesAt: Int = 0
 
             // Extract number of dice
             val (extractedNumDice, nextIndex1) = extractNumDice(notation)
             numDice = extractedNumDice
-            if (numDice == 0) return null
+            if (numDice == 0.toInt()) return null
 
             // Check if percentile
-            val (isPercentile, nextIndex2) = isPercentile(notation, nextIndex1)
+            val (isPercentile, nextIndex2) = isPercentile(notation, nextIndex1.toInt())
             if (isPercentile) {
                 numSides = 100
             } else {
                 // Extract number of sides
                 val (extractedNumSides, nextIndex3) = extractNumSides(notation, nextIndex2)
-                numSides = extractedNumSides
-                if (numSides == 0) return null
+                numSides = extractedNumSides.toInt()
+                if (numSides == 0.toInt()) return null
 
                 // Check if dice explode
                 val (doesExplode, nextIndex4) = doesExplode(notation, nextIndex3)
 
                 if (nextIndex4 >= notation.length) {
-                    val dc = DiceCollection(numDice.toLong(), numSides)
+                    val dc = DiceCollection(numDice, numSides)
                     if (doesExplode) {
-                        dc.explosionLowerBound = numSides.toLong()
+                        dc.explosionLowerBound = numSides
                     }
                     return dc
                 }
@@ -133,9 +152,9 @@ class DiceNotationInterpreter {
                 }
             }
 
-            val dc = DiceCollection(numDice.toLong(), numSides)
+            val dc = DiceCollection(numDice.toInt(), numSides)
             if (explodesAt > 0) {
-                dc.explosionLowerBound = explodesAt.toLong()
+                dc.explosionLowerBound = explodesAt.toInt()
             }
             return dc
         }
@@ -419,7 +438,17 @@ class DiceNotationInterpreter {
         postfixRanges.reverseInPlace()
     }
 
-    fun diceRollInstructionFromString(operandStr: String): DiceRollInstruction {
+    private fun numArgsForOpType(operationType: OperationType): Int {
+        return when (operationType) {
+            OperationType.ADD,
+            OperationType.SUBTRACT,
+            OperationType.MULTIPLY,
+            OperationType.DIVIDE -> 2
+            else -> 0
+        }
+    }
+
+    fun diceRollInstructionFromString(operandStr: String): DiceRollInstruction? {
         // Implementation depends on what this function does in the original code
         // This is a simplified version based on usage in the code
         val operationType = when {
@@ -433,7 +462,7 @@ class DiceNotationInterpreter {
         }
 
         val diceCollection = if (operationType == OperationType.DICE_COLLECTION) {
-            DiceCollection().fromString // Initialize with default values
+            diceCollectionFromCoreNotation(operandStr)
         } else {
             null
         }
@@ -444,11 +473,17 @@ class DiceNotationInterpreter {
             null
         }
 
-        return DiceRollInstruction(operandStr, operationType, diceCollection, numericValue)
+        if (diceCollection == null && numericValue == null) {
+            return null
+        }
+
+        val resultType: ResultType = if (diceCollection == null) ResultType.DOUBLE else ResultType.DICE_COLLECTION
+        val numArgs = numArgsForOpType(operationType)
+        return DiceRollInstruction(diceCollection ?: numericValue!!, resultType, numArgs, operationType)
     }
 
     fun diceRollInstructionStackFromExpression(expression: String): DiceRollInstructionStack {
-        val instructionStack = DiceRollInstructionStack()
+        val instructionStack = DiceRollInstructionStack(8)
         val postfixRanges = DynamicArray<Range>()
 
         // Add parentheses around the expression
@@ -463,12 +498,13 @@ class DiceNotationInterpreter {
 
             val instruction = diceRollInstructionFromString(operandStr)
 
-            if (instruction.operationType == OperationType.DICE_COLLECTION) {
-                val dc = instruction.getDiceCollection()
-                dc?.indexFoundAt = rangeStart
+            if (instruction != null) {
+                if (instruction.opType == OperationType.DICE_COLLECTION) {
+                    val dc = instruction.getDiceCollection()
+                    dc?.indexFoundAt = rangeStart
+                }
+                instructionStack.push(instruction)
             }
-
-            instructionStack.push(instruction)
         }
 
         return instructionStack

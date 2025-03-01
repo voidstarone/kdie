@@ -3,10 +3,10 @@ package one.voidstar.kdie
 import kotlin.math.log10
 import kotlin.math.floor
 
-class DiceRollingSession private constructor() {
+class DiceRollingSession constructor() {
     var diceCollections: MutableList<DiceCollection>? = null
-    var botchUpperBound: Long = 0
-    var successLowerBound: Long = Long.MAX_VALUE
+    var botchUpperBound: Int = 0
+    var successLowerBound: Int = Int.MAX_VALUE
 
     companion object {
         fun create(): DiceRollingSession {
@@ -14,8 +14,8 @@ class DiceRollingSession private constructor() {
         }
 
         // Helper function to count number of digits in a number
-        private fun numDigits(n: Long): Int {
-            return if (n == 0L) 1 else floor(log10(n.toDouble()) + 1).toInt()
+        private fun numDigits(n: Int): Int {
+            return if (n == 0) 1 else floor(log10(n.toDouble()) + 1).toInt()
         }
 
         // Helper function to count decimals in a double
@@ -38,7 +38,8 @@ class DiceRollingSession private constructor() {
     }
 
     fun resolveNotation(expression: String): String {
-        val instructions = diceRollInstructionStackFromExpression(expression)
+
+        val instructions =  DiceNotationInterpreter().diceRollInstructionStackFromExpression(expression)
 
         diceCollections = instructions.getDiceCollections().toMutableList()
         diceCollections?.sortBy { it.indexFoundAt }
@@ -51,7 +52,7 @@ class DiceRollingSession private constructor() {
             resultBuilder.append(resultsString)
             resultBuilder.append("\n")
 
-            if (successLowerBound < Long.MAX_VALUE) {
+            if (successLowerBound < Int.MAX_VALUE) {
                 val botches = dc.countResultsBelowOrMatchingBound(botchUpperBound)
                 val successes = dc.countResultsAboveOrMatchingBound(successLowerBound)
                 resultBuilder.append("successes: ${successes - botches}\n")
@@ -69,12 +70,6 @@ class DiceRollingSession private constructor() {
 
         return resultBuilder.toString()
     }
-}
-
-// This function would need to be implemented or imported from elsewhere
-fun diceRollInstructionStackFromExpression(expression: String): DiceRollInstructionStack {
-    // Implementation would depend on your parser
-    return DiceRollInstructionStack.create(16) // Placeholder
 }
 
 // Extension function for DiceCollection to create results string

@@ -8,25 +8,6 @@ enum class RangeType {
     RANGE_WITH_PRIORITY
 }
 
-// Data classes instead of C structs
-data class Range(
-    var index: Int,
-    var length: Int
-) {
-    fun isInRange(i: Int): Boolean {
-        return i >= index && i <= (index + length)
-    }
-}
-
-data class OperatorWithLocation(
-    val operation: OperationType,
-    val index: Int
-)
-
-data class RangeWithPriority(
-    val range: Range,
-    var priority: Int
-)
 
 // Replace C's DynArray with a more Kotlinesque approach
 class DynamicArray<T>(initialCapacity: Int = 16) {

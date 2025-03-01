@@ -3,18 +3,18 @@ package one.voidstar.kdie
 import Die
 
 class DiceCollection(
-    val size: Long,
-    val sides: Long,
-    var indexFoundAt: Long
+    val size: Int,
+    val sides: Int,
+    var indexFoundAt: Int = -1
 ) {
     private var dice: Array<Die> = Array(size.toInt()) { Die(sides) }
-    private var _lastResults: MutableList<Long> = mutableListOf<Long>()
-    var explosionLowerBound: Long = 0
+    private var _lastResults: MutableList<Int> = mutableListOf<Int>()
+    var explosionLowerBound: Int = 0
     var doExplosionsStack: Boolean = true
 
-    val lastResults: List<Long>
+    val lastResults: List<Int>
         get() {
-            if (_lastResults == null) {
+            if (_lastResults.isEmpty()) {
                 rollSilent()
             }
             return _lastResults!!
@@ -24,12 +24,12 @@ class DiceCollection(
         return dice[index]
     }
 
-    fun setResults(results: List<Long>) {
+    fun setResults(results: List<Int>) {
         _lastResults = results.toMutableList()
     }
 
     fun rollSilent() {
-        val newResults = mutableListOf<Long>()
+        val newResults = mutableListOf<Int>()
 
         // Roll all dice
         for (i in 0 until size.toInt()) {
@@ -76,26 +76,26 @@ class DiceCollection(
         }
     }
 
-    fun roll(): List<Long> {
+    fun roll(): List<Int> {
         rollSilent()
         return lastResults
     }
 
-    fun total(): Long {
+    fun total(): Int {
         return lastResults.sum()
     }
 
-    fun countResultsAboveOrMatchingBound(bound: Long): Long {
-        return lastResults.count { it >= bound }.toLong()
+    fun countResultsAboveOrMatchingBound(bound: Int): Int {
+        return lastResults.count { it >= bound }.toInt()
     }
 
-    fun countResultsBelowOrMatchingBound(bound: Long): Long {
-        return lastResults.count { it <= bound }.toLong()
+    fun countResultsBelowOrMatchingBound(bound: Int): Int {
+        return lastResults.count { it <= bound }.toInt()
     }
 
     override fun toString(): String {
-        val resultValues = if (_lastResults != null) {
-            _lastResults!!.joinToString(", ")
+        val resultValues = if (!_lastResults.isEmpty()) {
+            _lastResults.joinToString(", ")
         } else {
             dice.map { it.result }.joinToString(", ")
         }
@@ -104,7 +104,7 @@ class DiceCollection(
     }
 
     companion object {
-        fun create(size: Long, sides: Long): DiceCollection {
+        fun create(size: Int, sides: Int): DiceCollection {
             return DiceCollection(size, sides, 0)
         }
     }

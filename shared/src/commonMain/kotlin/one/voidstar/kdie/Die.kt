@@ -1,10 +1,10 @@
 data class Die(
-    val sides: Long,
-    private var lastResult: Long = -1
+    val sides: Int,
+    private var lastResult: Int = -1
 ) {
-    val result: Long
+    val result: Int
         get() {
-            if (lastResult == (-1).toLong()) {
+            if (lastResult == -1) {
                 this.roll()
             }
             return lastResult
