@@ -29,10 +29,10 @@ class DiceCollection(
     }
 
     fun rollSilent() {
-        val newResults = mutableListOf<Int>()
+        val newResults = ArrayList<Int>(size)
 
         // Roll all dice
-        for (i in 0 until size.toInt()) {
+        for (i in 0 until size) {
             val die = dieAt(i)
             die.roll()
             newResults.add(die.result)
@@ -44,6 +44,10 @@ class DiceCollection(
         if (explosionLowerBound > 0) {
             doExplodes(0)
         }
+    }
+
+    fun doExplodes() {
+        doExplodes(0)
     }
 
     private fun doExplodes(startIndex: Int) {
